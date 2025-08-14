@@ -32,7 +32,7 @@ def create_v2_blueprint(*, registry: ClientRegistry, coordinator: RequestCoordin
         # В polling режиме мы фиксируем фиктивный sid = client_id (не пересекается с socketio sid)
         # и регистрируем его в общей таблице
         sid = client_id
-        registry.add(sid=sid, ip=request.headers.get("X-Forwarded-For", "polling"))
+        registry.add(sid=sid, ip="polling")
         registry.register(sid=sid, data={"id": client_id, "root_dir_name": root_dir_name})
         logger.info(f"Polling клиент зарегистрирован: {client_id}")
         return await jsonify({"clientId": sid})
