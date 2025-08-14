@@ -28,14 +28,14 @@ def create_v2_blueprint(*, registry: ClientRegistry, coordinator: RequestCoordin
         client_id = (data or {}).get("id")
         root_dir_name = (data or {}).get("root_dir_name", "project")
         if not client_id:
-            return await jsonify({"error": "Отсутствует 'id'"}), 400
+            return jsonify({"error": "Отсутствует 'id'"}), 400
         # В polling режиме мы фиксируем фиктивный sid = client_id (не пересекается с socketio sid)
         # и регистрируем его в общей таблице
         sid = client_id
         registry.add(sid=sid, ip="polling")
         registry.register(sid=sid, data={"id": client_id, "root_dir_name": root_dir_name})
         logger.info(f"Polling клиент зарегистрирован: {client_id}")
-        return await jsonify({"clientId": sid})
+        return jsonify({"clientId": sid})
 
     @v2_bp.post("/disconnect")
     async def v2_disconnect():
@@ -44,17 +44,17 @@ def create_v2_blueprint(*, registry: ClientRegistry, coordinator: RequestCoordin
         if sid:
             registry.remove(sid)
             logger.info(f"Polling клиент отключен: {sid}")
-        return await jsonify({"status": "ok"})
+        return jsonify({"status": "ok"})
 
     @v2_bp.get("/check")
     async def v2_check():
         sid = request.args.get("clientId")
         if not sid:
-            return await jsonify({"error": "clientId is required"}), 400
+            return jsonify({"error": "clientId is required"}), 400
         if not registry.is_present(sid):
-            return await jsonify({"error": "unknown client"}), 404
+            return jsonify({"error": "unknown client"}), 404
         commands = await coordinator.fetch_polling_commands(sid)
-        return await jsonify({"commands": commands})
+        return jsonify({"commands": commands})
 
     @v2_bp.post("/upload/<string:sid>/<string:req_id>")
     async def v2_upload(sid: str, req_id: str):
@@ -62,9 +62,9 @@ def create_v2_blueprint(*, registry: ClientRegistry, coordinator: RequestCoordin
         # Формат: { "payload": { ... } }
         data = await request.get_json()
         if not data or "payload" not in data:
-            return await jsonify({"error": "payload is required"}), 400
+            return jsonify({"error": "payload is required"}), 400
         # Пробрасываем как будто это ответ на запрос с данным req_id
         await coordinator.handle_response(sid, {"request_id": req_id, "payload": data["payload"]})
-        return await jsonify({"status": "received"})
+        return jsonify({"status": "received"})
 
     return v2_bp

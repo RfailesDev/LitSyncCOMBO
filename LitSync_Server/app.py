@@ -56,8 +56,16 @@ def create_app() -> Tuple[Quart, socketio.AsyncServer, RequestCoordinator, Clien
     app = Quart(__name__)
     app.config["SECRET_KEY"] = config.SECRET_KEY
 
-    # CORS только для /api и /v2 путей
-    app = cors(app, allow_origin=config.ALLOWED_ORIGIN, allow_credentials=True, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"])
+    # CORS: если ALLOWED_ORIGIN='*', отключаем credentials (требование quart-cors)
+    allow_origin = config.ALLOWED_ORIGIN
+    allow_credentials = allow_origin != "*"
+    app = cors(
+        app,
+        allow_origin=allow_origin,
+        allow_credentials=allow_credentials,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["*"],
+    )
 
     # Настраиваем Socket.IO (ASGI)
     sio = socketio.AsyncServer(

@@ -44,20 +44,20 @@ def create_api_blueprint(
 
     @api_bp.get("/clients")
     async def get_clients_api():
-        return await jsonify(registry.get_all_registered())
+        return jsonify(registry.get_all_registered())
 
     @api_bp.post("/sync")
     async def sync_files_api():
         data = await request.get_json()
         if not data or "clientId" not in data or "text" not in data:
-            return await jsonify({"error": "Некорректный запрос. Отсутствуют поля 'clientId' или 'text'."}), 400
+            return jsonify({"error": "Некорректный запрос. Отсутствуют поля 'clientId' или 'text'."}), 400
 
         client_sid: str = data["clientId"]
         raw_llm_text: str = data["text"]
         _save_raw_text_for_debugging(raw_llm_text, client_sid)
 
         if not registry.is_present(client_sid):
-            return await jsonify({"error": "Клиент не найден или уже отключился."}), 404
+            return jsonify({"error": "Клиент не найден или уже отключился."}), 404
 
         llm_text = raw_llm_text.replace('\r\n', '\n')
         client_hostname = registry.get_hostname(client_sid)
@@ -67,7 +67,7 @@ def create_api_blueprint(
             files_to_update, debug_info = parser.parse(llm_text)
             if not files_to_update:
                 logger.warning(f"Парсер не извлек файлы для клиента {client_sid}. Отправка ответа об ошибке.")
-                return await jsonify({
+                return jsonify({
                     "error": "Не удалось извлечь ни одной пары 'файл-код' из текста. Убедитесь, что путь к файлу указан на отдельной строке прямо перед блоком кода.",
                     "debug_info": debug_info
                 }), 400
@@ -76,7 +76,7 @@ def create_api_blueprint(
             # но фактическая передача содержимого файлов происходит не по сокету, а обычным API.
             await coordinator.emit_update_files_command(client_sid, files_to_update)
             logger.info(f"Команда на обновление {len(files_to_update)} файлов успешно отправлена клиенту {client_sid}")
-            return await jsonify(
+            return jsonify(
                 {
                     "status": "success",
                     "message": f"Команда на обновление {len(files_to_update)} файлов отправлена.",
@@ -85,19 +85,19 @@ def create_api_blueprint(
             )
         except Exception as e:
             logger.error(f"Критическая ошибка при обработке запроса на синхронизацию: {e}", exc_info=True)
-            return await jsonify({"error": "Внутренняя ошибка сервера при обработке запроса."}), 500
+            return jsonify({"error": "Внутренняя ошибка сервера при обработке запроса."}), 500
 
     @api_bp.post("/sync/preview")
     async def sync_preview_api():
         data = await request.get_json()
         if not data or "clientId" not in data or "text" not in data:
-            return await jsonify({"error": "Некорректный запрос."}), 400
+            return jsonify({"error": "Некорректный запрос."}), 400
 
         client_sid: str = data["clientId"]
         raw_llm_text: str = data["text"]
 
         if not registry.is_present(client_sid):
-            return await jsonify({"error": "Клиент не найден или отключился."}), 404
+            return jsonify({"error": "Клиент не найден или отключился."}), 404
 
         client_hostname = registry.get_hostname(client_sid)
         logger.info(f"Получен запрос на ПРЕДПРОСМОТР для клиента: {client_hostname} ({client_sid})")
@@ -106,7 +106,7 @@ def create_api_blueprint(
             llm_text = raw_llm_text.replace('\r\n', '\n')
             new_files_content, _ = parser.parse(llm_text)
             if not new_files_content:
-                return await jsonify({"error": "Не удалось извлечь файлы из текста для предпросмотра."}), 400
+                return jsonify({"error": "Не удалось извлечь файлы из текста для предпросмотра."}), 400
 
             paths_to_check = [file["path"] for file in new_files_content]
 
@@ -114,7 +114,7 @@ def create_api_blueprint(
             response = await coordinator.make_request(client_sid, "get_file_content", {"paths": paths_to_check})
 
             if response.get("error"):
-                return await jsonify({"error": f"Ошибка на клиенте: {response['error']}"}), 502
+                return jsonify({"error": f"Ошибка на клиенте: {response['error']}"}), 502
 
             current_files_content = {
                 file["path"]: file for file in response.get("files", [])
@@ -145,62 +145,62 @@ def create_api_blueprint(
                     })
 
             logger.info(f"Сгенерирован diff для {len(changes)} файлов. Отправка в расширение.")
-            return await jsonify({"changes": changes})
+            return jsonify({"changes": changes})
 
         except TimeoutError:
-            return await jsonify({"error": "Клиент не ответил на запрос о содержимом файлов вовремя."}), 504
+            return jsonify({"error": "Клиент не ответил на запрос о содержимом файлов вовремя."}), 504
         except Exception as e:
             logger.error(f"Критическая ошибка при генерации предпросмотра: {e}", exc_info=True)
-            return await jsonify({"error": "Внутренняя ошибка сервера при генерации предпросмотра."}), 500
+            return jsonify({"error": "Внутренняя ошибка сервера при генерации предпросмотра."}), 500
 
     @api_bp.get("/clients/<string:client_sid>/file_tree")
     async def get_file_tree_api(client_sid: str):
         if not registry.is_present(client_sid):
-            return await jsonify({"error": "Клиент не найден или отключился."}), 404
+            return jsonify({"error": "Клиент не найден или отключился."}), 404
         try:
             response = await coordinator.make_request(client_sid, "get_file_tree")
-            return await jsonify(response)
+            return jsonify(response)
         except TimeoutError:
-            return await jsonify({"error": "Клиент не ответил на запрос вовремя."}), 504
+            return jsonify({"error": "Клиент не ответил на запрос вовремя."}), 504
         except Exception as e:
             logger.error(f"Ошибка при запросе дерева файлов у {client_sid}: {e}", exc_info=True)
-            return await jsonify({"error": "Внутренняя ошибка сервера."}), 500
+            return jsonify({"error": "Внутренняя ошибка сервера."}), 500
 
     @api_bp.post("/clients/<string:client_sid>/file_content")
     async def get_file_content_api(client_sid: str):
         if not registry.is_present(client_sid):
-            return await jsonify({"error": "Клиент не найден или отключился."}), 404
+            return jsonify({"error": "Клиент не найден или отключился."}), 404
         data = await request.get_json()
         paths = data.get("paths") if data else None
         if not isinstance(paths, list):
-            return await jsonify({"error": "Поле 'paths' должно быть списком."}), 400
+            return jsonify({"error": "Поле 'paths' должно быть списком."}), 400
         try:
             response = await coordinator.make_request(
                 client_sid, "get_file_content", {"paths": paths}
             )
-            return await jsonify(response)
+            return jsonify(response)
         except TimeoutError:
-            return await jsonify({"error": "Клиент не ответил на запрос вовремя."}), 504
+            return jsonify({"error": "Клиент не ответил на запрос вовремя."}), 504
         except Exception as e:
             logger.error(f"Ошибка при запросе контента у {client_sid}: {e}", exc_info=True)
-            return await jsonify({"error": "Внутренняя ошибка сервера."}), 500
+            return jsonify({"error": "Внутренняя ошибка сервера."}), 500
 
     @api_bp.post("/prompt/generate")
     async def generate_prompt_api():
         data = await request.get_json()
         if not data:
-            return await jsonify({"error": "Пустое тело запроса."}), 400
+            return jsonify({"error": "Пустое тело запроса."}), 400
 
         files = data.get("files")
         client_sid = data.get("clientId")
         docs = data.get("docs")
 
         if not isinstance(files, list):
-            return await jsonify({"error": "Поле 'files' должно быть списком."}), 400
+            return jsonify({"error": "Поле 'files' должно быть списком."}), 400
         if not client_sid:
-            return await jsonify({"error": "Не предоставлен 'clientId'."}), 400
+            return jsonify({"error": "Не предоставлен 'clientId'."}), 400
         if docs and not isinstance(docs, list):
-            return await jsonify({"error": "Поле 'docs' должно быть списком."}), 400
+            return jsonify({"error": "Поле 'docs' должно быть списком."}), 400
 
         try:
             client_meta = registry.get_client_metadata(client_sid)
@@ -211,10 +211,10 @@ def create_api_blueprint(
                 root_name = client_meta.get("root_dir_name", "project")
 
             prompt_text = prompt_builder.build(files, root_name=root_name, docs=docs)
-            return await jsonify({"prompt": prompt_text})
+            return jsonify({"prompt": prompt_text})
         except Exception as e:
             logger.error(f"Ошибка при генерации промпта: {e}", exc_info=True)
-            return await jsonify({"error": "Внутренняя ошибка сервера при генерации промпта."}), 500
+            return jsonify({"error": "Внутренняя ошибка сервера при генерации промпта."}), 500
 
     return api_bp
 
@@ -229,21 +229,21 @@ def create_context7_api_blueprint() -> Blueprint:
 
         query = request.args.get("query")
         if not query:
-            return await jsonify({"error": "Параметр 'query' обязателен."}), 400
+            return jsonify({"error": "Параметр 'query' обязателен."}), 400
         try:
             client = get_context7_client()
             logger.info(f"Выполняется поиск в Context7 по запросу: '{query}'")
             search_response = client.search(query)
-            return await jsonify(search_response.model_dump(by_alias=True))
+            return jsonify(search_response.model_dump(by_alias=True))
         except RateLimitError as e:
             logger.warning(f"Достигнут лимит запросов к Context7 API: {e}")
-            return await jsonify({"error": "Сервер временно перегружен запросами к базе знаний. Попробуйте позже."}), 429
+            return jsonify({"error": "Сервер временно перегружен запросами к базе знаний. Попробуйте позже."}), 429
         except APIError as e:
             logger.error(f"Ошибка API Context7 при поиске: {e}", exc_info=True)
-            return await jsonify({"error": "Ошибка при взаимодействии с базой знаний."}), 502
+            return jsonify({"error": "Ошибка при взаимодействии с базой знаний."}), 502
         except Exception as e:
             logger.error(f"Непредвиденная ошибка при поиске в Context7: {e}", exc_info=True)
-            return await jsonify({"error": "Внутренняя ошибка сервера."}), 500
+            return jsonify({"error": "Внутренняя ошибка сервера."}), 500
 
     @context7_bp.get("/docs/<path:library_id>")
     async def get_doc_content(library_id: str):
@@ -255,16 +255,16 @@ def create_context7_api_blueprint() -> Blueprint:
             logger.info(f"Запрос документации из Context7 для ID: '{library_id}'")
             content = client.fetch_documentation(library_id, topic=topic)
             if content is None:
-                return await jsonify({"error": "Документация не найдена."}), 404
-            return await jsonify({"id": library_id, "content": content})
+                return jsonify({"error": "Документация не найдена."}), 404
+            return jsonify({"id": library_id, "content": content})
         except RateLimitError as e:
             logger.warning(f"Достигнут лимит запросов к Context7 API: {e}")
-            return await jsonify({"error": "Сервер временно перегружен запросами к базе знаний. Попробуйте позже."}), 429
+            return jsonify({"error": "Сервер временно перегружен запросами к базе знаний. Попробуйте позже."}), 429
         except APIError as e:
             logger.error(f"Ошибка API Context7 при получении документации: {e}", exc_info=True)
-            return await jsonify({"error": "Ошибка при взаимодействии с базой знаний."}), 502
+            return jsonify({"error": "Ошибка при взаимодействии с базой знаний."}), 502
         except Exception as e:
             logger.error(f"Непредвиденная ошибка при получении документации из Context7: {e}", exc_info=True)
-            return await jsonify({"error": "Внутренняя ошибка сервера."}), 500
+            return jsonify({"error": "Внутренняя ошибка сервера."}), 500
 
     return context7_bp
