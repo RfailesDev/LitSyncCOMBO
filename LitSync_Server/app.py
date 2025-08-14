@@ -57,7 +57,7 @@ def create_app() -> Tuple[Quart, socketio.AsyncServer, RequestCoordinator, Clien
     app.config["SECRET_KEY"] = config.SECRET_KEY
 
     # CORS только для /api и /v2 путей
-    app = cors(app, allow_origin=config.ALLOWED_ORIGIN, allow_credentials=True, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"], always_send=True)
+    app = cors(app, allow_origin=config.ALLOWED_ORIGIN, allow_credentials=True, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"])
 
     # Настраиваем Socket.IO (ASGI)
     sio = socketio.AsyncServer(
