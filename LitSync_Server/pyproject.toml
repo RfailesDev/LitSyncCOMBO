@@ -9,6 +9,7 @@ packages = [{include = "app"}, {include = "core"}, {include = "web"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 quart = "^0.19.6"
+flask = "3.0.3"
 python-socketio = "^5.11.2"
 hypercorn = "^0.16.0"
 quart-cors = "^0.7.0"

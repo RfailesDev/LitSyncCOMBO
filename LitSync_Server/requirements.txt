@@ -1,5 +1,6 @@
 # --- Web Framework ---
 quart==0.19.6
+flask==3.0.3
 
 # --- WebSocket & Async Support ---
 python-socketio==5.11.2
