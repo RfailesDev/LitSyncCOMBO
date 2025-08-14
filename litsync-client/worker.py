@@ -9,6 +9,7 @@
 import json
 import logging
 import time
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -169,7 +170,6 @@ class SyncWorker(QObject):
         self._sio.connect(
             self._server_url,
             namespaces=[CLIENT_NAMESPACE],
-            transports=['polling'],
             wait_timeout=CONNECTION_TIMEOUT_SECONDS,
         )
         self._sio.wait()
@@ -284,11 +284,12 @@ class SyncWorker(QObject):
             logging.error(f"Нет upload_url для отправки ответа (req_id={request_id}).")
             return
         try:
-            resp = self._http_session.post(upload_url, json={"payload": payload}, timeout=30)
+            # Используем отдельный HTTP вызов (без общей с Socket.IO сессии), чтобы исключить блокировки/гонки
+            resp = requests.post(upload_url, json={"payload": payload}, timeout=60, proxies=self._proxies or {})
             resp.raise_for_status()
-            logging.info(f"Успешно отправлен ответ (polling) на {upload_url}")
+            logging.info(f"Успешно отправлен ответ на {upload_url} (req_id: {request_id})")
         except Exception as e:
-            logging.error(f"Не удалось отправить ответ (polling) на {upload_url}: {e}")
+            logging.error(f"Не удалось отправить ответ на {upload_url}: {e}")
 
     def stop(self) -> None:
         logging.info("Получен сигнал остановки для воркера.")
@@ -336,15 +337,22 @@ class SyncWorker(QObject):
             logging.error(f"Не удалось сериализовать данные файлов в JSON: {e}")
 
     def _on_get_file_tree(self, data: Dict[str, Any]) -> None:
-        # _CHANGED_: Возвращаем логику обработки `request_id`
+        # _CHANGED_: Обработка переносится в фон, чтобы не блокировать PONG
         request_id = data.get("request_id")
         upload_url = data.get("upload_url")
         if not request_id:
             logging.warning("Получен запрос get_file_tree без request_id.")
             return
-        logging.info(f"Получен запрос на дерево файлов (req_id: {request_id}).")
+        logging.info(f"Получен запрос на дерево файлов (req_id: {request_id}). Запускаю фоновую обработку...")
+        threading.Thread(
+            target=self._process_get_file_tree,
+            args=(request_id, upload_url),
+            daemon=True,
+        ).start()
+
+    def _process_get_file_tree(self, request_id: str, upload_url: Optional[str]) -> None:
         try:
-            file_list = []
+            file_list: List[str] = []
             for path in ROOT_DIR.rglob("*"):
                 if self._gitignore_filter.is_ignored(path):
                     continue
@@ -360,7 +368,7 @@ class SyncWorker(QObject):
             else:
                 response = {"request_id": request_id, "payload": payload}
                 self._sio.emit("file_tree_response", response, namespace=CLIENT_NAMESPACE)
-            logging.info(f"Отправлен ответ на дерево файлов с {len(file_list)} файлами.")
+            logging.info(f"Отправлен ответ на дерево файлов с {len(file_list)} файлами (req_id: {request_id}).")
         except Exception as e:
             logging.error(f"Ошибка при сборке дерева файлов: {e}", exc_info=True)
             payload = {"error": f"Ошибка на стороне клиента: {e}"}
@@ -371,22 +379,29 @@ class SyncWorker(QObject):
                 self._sio.emit("file_tree_response", response, namespace=CLIENT_NAMESPACE)
 
     def _on_get_file_content(self, data: Dict[str, Any]) -> None:
-        # _CHANGED_: Возвращаем логику обработки `request_id`
+        # _CHANGED_: Обработка переносится в фон, чтобы не блокировать PONG
         request_id = data.get("request_id")
         upload_url = data.get("upload_url")
         paths_to_read = data.get("paths", [])
         if not request_id:
             logging.warning("Получен запрос get_file_content без request_id.")
             return
-        logging.info(f"Получен запрос на содержимое {len(paths_to_read)} файлов (req_id: {request_id}).")
-        files_with_content = []
+        logging.info(f"Получен запрос на содержимое {len(paths_to_read)} файлов (req_id: {request_id}). Запускаю фоновую обработку...")
+        threading.Thread(
+            target=self._process_get_file_content,
+            args=(request_id, upload_url, paths_to_read),
+            daemon=True,
+        ).start()
+
+    def _process_get_file_content(self, request_id: str, upload_url: Optional[str], paths_to_read: List[str]) -> None:
+        files_with_content: List[Dict[str, Optional[str]]] = []
         root_dir_str = str(ROOT_DIR.resolve())
         try:
             for rel_path_str in paths_to_read:
                 try:
                     full_path = (ROOT_DIR / rel_path_str).resolve()
                     if not str(full_path).startswith(root_dir_str):
-                         raise SecurityException(f"Попытка доступа за пределы ROOT_DIR: {rel_path_str}")
+                        raise SecurityException(f"Попытка доступа за пределы ROOT_DIR: {rel_path_str}")
                     if self._gitignore_filter.is_ignored(full_path):
                         skip_reason = "Файл игнорируется .gitignore"
                         logging.warning(f"Пропуск файла '{rel_path_str}': {skip_reason}")
@@ -414,7 +429,7 @@ class SyncWorker(QObject):
             else:
                 response = {"request_id": request_id, "payload": payload}
                 self._sio.emit("file_content_response", response, namespace=CLIENT_NAMESPACE)
-            logging.info(f"Отправлен ответ с содержимым {len(files_with_content)} файлов.")
+            logging.info(f"Отправлен ответ с содержимым {len(files_with_content)} файлов (req_id: {request_id}).")
         except Exception as e:
             logging.error(f"Критическая ошибка при обработке запроса на содержимое файлов: {e}", exc_info=True)
             payload = {"error": f"Критическая ошибка на стороне клиента: {e}"}
