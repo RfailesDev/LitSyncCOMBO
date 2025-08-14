@@ -11,6 +11,7 @@ PyQt6_sip==13.10.2
 python-engineio==4.12.2
 python-socketio==5.11.2
 requests==2.32.3
+PySocks==1.7.1
 simple-websocket==1.1.0
 urllib3==2.4.0
 websocket-client==1.8.0

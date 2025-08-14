@@ -1,18 +1,19 @@
 [tool.poetry]
 name = "litsync-server"
-version = "1.1.0"
-description = "Real-time synchronization server for code editing via LLM."
+version = "2.0.0"
+description = "Real-time synchronization server for code editing via LLM. Quart + Socket.IO + Polling."
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 packages = [{include = "app"}, {include = "core"}, {include = "web"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-flask = "^3.0.3"
-flask-socketio = "^5.3.6"
-eventlet = "^0.36.1"
-gunicorn = "^22.0.0"
-flask-cors = "^4.0.1"
+quart = "^0.19.6"
+python-socketio = "^5.11.2"
+hypercorn = "^0.16.0"
+quart-cors = "^0.7.0"
+httpx = ">=0.27.0"
+pydantic = ">=2.7.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"

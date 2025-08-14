@@ -17,6 +17,11 @@ SOCKS_PROXY_URL: str = "socks5://127.0.0.1:10808"
 PROXY_TEST_URL: str = "https://google.com"
 PROXY_TEST_TIMEOUT_SECONDS: int = 5
 
+# --- Переключатели режима ---
+USE_POLLING_MODE: bool = False  # Если True, SocketIO не используется, клиент работает через /v2/* API
+USE_PROXY: bool = True          # Если False, принудительно игнорировать прокси и использовать HTTPS напрямую
+POLLING_INTERVAL_SECONDS: float = 1.5
+
 CLIENT_NAMESPACE: str = "/client"
 
 # --- Настройки переподключения ---
@@ -26,7 +31,7 @@ CONNECTION_TIMEOUT_SECONDS: int = 10
 
 # --- Настройки приложения ---
 APP_NAME: str = "LitSync-Client"
-APP_VERSION: str = "4.0.0" # Версия обновлена для отражения изменений
+APP_VERSION: str = "4.1.0" # Версия обновлена для отражения изменений
 
 # --- Настройки фильтрации файлов ---
 # Максимальный размер файла в байтах, который будет считываться.
@@ -41,20 +46,20 @@ BINARY_DETECTION_CHUNK_SIZE: int = 4096
 # Набор расширений файлов, которые всегда считаются бинарными и пропускаются.
 # Использование set() обеспечивает очень быструю проверку (O(1)).
 BINARY_FILE_EXTENSIONS: set[str] = {
-    # Исполняемые файлы и библиотеки
-    ".exe", ".dll", ".so", ".o", ".a", ".lib", ".dylib",
-    # Архивы
-    ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".iso",
-    # Изображения
-    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp", ".ico",
-    # Аудио и видео
-    ".mp3", ".wav", ".flac", ".ogg", ".mp4", ".mkv", ".avi", ".mov", ".webm",
-    # Документы
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt",
-    # Шрифты
-    ".ttf", ".otf", ".woff", ".woff2",
-    # Базы данных и скомпилированные форматы
-    ".db", ".sqlite", ".sqlite3", ".pyc", ".pyo",
+	# Исполняемые файлы и библиотеки
+	".exe", ".dll", ".so", ".o", ".a", ".lib", ".dylib",
+	# Архивы
+	".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".iso",
+	# Изображения
+	".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".webp", ".ico",
+	# Аудио и видео
+	".mp3", ".wav", ".flac", ".ogg", ".mp4", ".mkv", ".avi", ".mov", ".webm",
+	# Документы
+	".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt",
+	# Шрифты
+	".ttf", ".otf", ".woff", ".woff2",
+	# Базы данных и скомпилированные форматы
+	".db", ".sqlite", ".sqlite3", ".pyc", ".pyo",
 }
 
 
@@ -70,11 +75,11 @@ BINARY_FILE_EXTENSIONS: set[str] = {
 #
 # Проверяем, не запущено ли приложение через PyInstaller (в виде одного файла)
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    # Если запущено как .exe, ROOT_DIR - это директория, где лежит .exe
-    ROOT_DIR: Path = Path(sys.executable).parent.resolve()
+	# Если запущено как .exe, ROOT_DIR - это директория, где лежит .exe
+	ROOT_DIR: Path = Path(sys.executable).parent.resolve()
 else:
-    # Если запущено как .py скрипт
-    ROOT_DIR: Path = Path(__file__).parent.resolve()
+	# Если запущено как .py скрипт
+	ROOT_DIR: Path = Path(__file__).parent.resolve()
 
 # Директории, которые нужно исключить при подсчете файлов для идентификатора клиента.
 # Этот список работает в дополнение к .gitignore как дополнительный уровень защиты.

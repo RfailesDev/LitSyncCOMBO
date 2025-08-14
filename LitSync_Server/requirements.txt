@@ -1,15 +1,14 @@
 # --- Web Framework ---
-flask==3.0.3
+quart==0.19.6
 
 # --- WebSocket & Async Support ---
-flask-socketio==5.3.6
-eventlet==0.36.1
+python-socketio==5.11.2
 
-# --- WSGI Production Server ---
-gunicorn==22.0.0
+# --- ASGI Production Server ---
+hypercorn==0.16.0
 
-# --- Security (CORS) ---
-flask-cors==4.0.1
+# --- CORS for Quart ---
+quart-cors==0.7.0
 
 httpx>=0.27.0
 pydantic>=2.7.0
