@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "litsync-server"
+version = "1.1.0"
+description = "Real-time synchronization server for code editing via LLM."
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "app"}, {include = "core"}, {include = "web"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+flask = "^3.0.3"
+flask-socketio = "^5.3.6"
+eventlet = "^0.36.1"
+gunicorn = "^22.0.0"
+flask-cors = "^4.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+mypy = "^1.10.0"
+black = "^24.4.2"
+ruff = "^0.4.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.main.api"

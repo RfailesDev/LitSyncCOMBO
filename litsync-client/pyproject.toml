@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "litsync-client"
+version = "3.2.0"
+description = "Десктопный клиент для синхронизации файлов LitSync."
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+PyQt6 = "^6.6.1"
+python-socketio = {extras = ["client"], version = "^5.10.0"}
+chardet = "^5.2.0"  # <-- НОВАЯ ЗАВИСИМОСТЬ
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

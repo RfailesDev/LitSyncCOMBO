@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>LitSync Control Panel</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+    <symbol id="icon-toggle-on" viewBox="0 0 24 24">
+        <path d="M16.9 8.42H7.1c-2.1 0-3.82 1.72-3.82 3.82s1.72 3.82 3.82 3.82h9.8c2.1 0 3.82-1.72 3.82-3.82s-1.72-3.82-3.82-3.82zm0 6.14H7.1c-1.28 0-2.32-1.04-2.32-2.32s1.04-2.32 2.32-2.32h9.8c1.28 0 2.32 1.04 2.32 2.32s-1.04 2.32-2.32 2.32z"/><circle cx="16.9" cy="12.24" r="2.87"/>
+    </symbol>
+    <symbol id="icon-toggle-off" viewBox="0 0 24 24">
+        <path d="M16.9 8.42H7.1c-2.1 0-3.82 1.72-3.82 3.82s1.72 3.82 3.82 3.82h9.8c2.1 0 3.82-1.72 3.82-3.82s-1.72-3.82-3.82-3.82zm-9.8 6.14c-1.28 0-2.32-1.04-2.32-2.32s1.04-2.32 2.32-2.32h9.8c1.28 0 2.32 1.04 2.32 2.32s-1.04 2.32-2.32 2.32H7.1z"/><circle cx="7.1" cy="12.24" r="2.87"/>
+    </symbol>
+    <symbol id="icon-save" viewBox="0 0 24 24">
+        <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zM12 18c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zM15 9H5v5h2V9h8z"/>
+    </symbol>
+    <symbol id="icon-volume" viewBox="0 0 24 24">
+        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+    </symbol>
+    <symbol id="icon-play" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z"/>
+    </symbol>
+</svg>
+
+<div class="container">
+    <header class="header">
+        <img src="icons/icon32.png" alt="LitSync Logo" class="logo-icon">
+        <h1>LitSync</h1>
+    </header>
+
+    <main class="content">
+        <div class="toggle-control">
+            <label for="enableSwitch" class="toggle-label">Активация на странице</label>
+            <label class="switch">
+                <input type="checkbox" id="enableSwitch">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="toggle-control">
+            <label for="shortenResponseSwitch" class="toggle-label">Сокращать ответы</label>
+            <label class="switch">
+                <input type="checkbox" id="shortenResponseSwitch">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="toggle-control">
+            <label for="keepActiveSwitch" class="toggle-label">Держать AIStudio активным</label>
+            <label class="switch">
+                <input type="checkbox" id="keepActiveSwitch">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="status-indicator" id="statusIndicator">
+            <svg class="status-icon" width="16" height="16"><use href="#icon-toggle-on"></use></svg>
+            <span class="status-text">Статус...</span>
+        </div>
+    </main>
+
+    <section class="content">
+        <div class="server-config">
+            <label for="serverUrlInput" class="server-config-label">Адрес сервера</label>
+            <div class="server-input-wrapper">
+                <input type="text" id="serverUrlInput" placeholder="http://127.0.0.1:6032">
+                <button id="saveServerUrlBtn" class="save-btn" title="Сохранить">
+                    <svg width="18" height="18"><use href="#icon-save"></use></svg>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="toggle-control">
+            <label for="soundEnableSwitch" class="toggle-label">Звук завершения ответа</label>
+            <label class="switch">
+                <input type="checkbox" id="soundEnableSwitch">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="audio-config hidden" id="audioConfigSection">
+            <div class="audio-choice">
+                <label class="radio-label">
+                    <input type="radio" name="soundChoice" value="complete1" checked>
+                    <span class="radio-custom"></span>
+                    <span>Звук 1</span>
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="soundChoice" value="complete2">
+                    <span class="radio-custom"></span>
+                    <span>Звук 2</span>
+                </label>
+            </div>
+            <div class="volume-control">
+                 <svg class="volume-icon" width="20" height="20"><use href="#icon-volume"></use></svg>
+                 <input type="range" id="volumeSlider" min="0" max="1" step="0.05">
+                 <button id="testSoundBtn" class="test-btn" title="Проиграть">
+                     <svg width="18" height="18"><use href="#icon-play"></use></svg>
+                 </button>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>Версия 8.1 (Sirius)</p>
+    </footer>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
